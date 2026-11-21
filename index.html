@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0c1725">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>RTP Study · v2.16</title>
+<title>RTP Study · v2.18</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1522;--panel:#142335;--line:#2e4258;--muted:#a7bdcf;--text:#f2f6fb;--aqua:#76d6e9;--green:#a4e5bd;--red:#ffc0be}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
@@ -111,7 +111,7 @@ nav::-webkit-scrollbar{display:none}
 </style>
 </head>
 <body>
-<header><div class="header-inner"><div class="brand">RTP STUDY<span class="version">v2.16</span></div><nav aria-label="App navigation"><button class="tab on" data-view="study">Study</button><button class="tab" data-view="guidance">Guidance</button><button class="tab" data-view="progress">Progress</button><button class="tab" data-view="settings">Settings</button></nav></div></header>
+<header><div class="header-inner"><div class="brand">RTP STUDY<span class="version">v2.19</span></div><nav aria-label="App navigation"><button class="tab on" data-view="study">Study</button><button class="tab" data-view="guidance">Guidance</button><button class="tab" data-view="progress">Progress</button><button class="tab" data-view="settings">Settings</button></nav></div></header>
 <main>
 <section id="view-study"><div class="toolbar"><button class="primary" data-action="new">↻ &nbsp;New scenario</button></div><div id="studyPanels"></div></section>
 <section id="view-guidance" class="hidden"><div class="guide-content">
@@ -322,11 +322,26 @@ function weighted(items,weight){if(!items.length)return null;let total=0;const w
 function stageAllowed(hours,index){if(hours<1.2&&[22,23,24,25,26,27].includes(index))return false;if(hours<1.7&&[23,24,27].includes(index))return false;return true;}
 // Column C is chronological. Rotation is still ground; after lift-off and
 // before touchdown are airborne. Touchdown and all subsequent phases are ground.
+// On climb: after lift-off through the final climb entry before top of climb.
+// Cruise: top of climb through approaching top of descent.
+// On descent: after top of descent through the last airborne approach entry.
 const AIRBORNE_FROM=16, AIRBORNE_TO=45;
-function positionGroup(){return ['any','airborne','not-airborne'].includes(editor.positionGroup)?editor.positionGroup:'any';}
+const CLIMB_FROM=16, CLIMB_TO=23;
+const CRUISE_FROM=24, CRUISE_TO=28;
+const DESCENT_FROM=29, DESCENT_TO=45;
+const POSITION_GROUPS=['any','airborne','not-airborne','climb','cruise','descent'];
+function migratePositionGroup(){
+ // Keep phase preferences from previous versions when upgrading / restoring.
+ if(editor.positionGroup==='takeoff')editor.positionGroup='climb';
+ if(editor.positionGroup==='landing')editor.positionGroup='descent';
+}
+function positionGroup(){return POSITION_GROUPS.includes(editor.positionGroup)?editor.positionGroup:'any';}
 function matchesPositionGroup(index,group=positionGroup()){
  if(group==='airborne')return index>=AIRBORNE_FROM&&index<=AIRBORNE_TO;
  if(group==='not-airborne')return index<AIRBORNE_FROM||index>AIRBORNE_TO;
+ if(group==='climb')return index>=CLIMB_FROM&&index<=CLIMB_TO;
+ if(group==='cruise')return index>=CRUISE_FROM&&index<=CRUISE_TO;
+ if(group==='descent')return index>=DESCENT_FROM&&index<=DESCENT_TO;
  return true;
 }
 function availablePositions(s,old,group=positionGroup()){
@@ -380,7 +395,7 @@ let editor={modes:{},edits:{},routeModes:{},routePins:{},routeLock:{departure:''
 function zfwTonnes(){const value=Number(editor.zfwTonnes);return Number.isFinite(value)&&value>0?value:59;}
 function save(){try{localStorage.setItem(STORE,JSON.stringify({version:2,editor,history,attempts,scenario}));}catch(e){} }
 function load(){try{const obj=JSON.parse(localStorage.getItem(STORE));if(obj&&obj.version===2){editor={...editor,...(obj.editor||{})};history=obj.history||history;attempts=Array.isArray(obj.attempts)?obj.attempts:[];scenario=obj.scenario||null;}}catch(e){}
- editor.modes ||= {};editor.edits ||= {};editor.routeModes ||= {};editor.routePins ||= {};syncRouteLock();
+ editor.modes ||= {};editor.edits ||= {};editor.routeModes ||= {};editor.routePins ||= {};syncRouteLock();migratePositionGroup();
  if(!canSelectGroup(positionGroup()))editor.positionGroup='any';
  for(const f of DATA.failures){if(editor.edits[f.id]&&!Array.isArray(editor.edits[f.id].rules))editor.edits[f.id].rules=f.rules.slice();}
  if(!scenario||!scenario.route||!scenario.dep||!scenario.alts||!scenario.shown||scenario.alts.length!==2||!USABLE_ROUTES.some(r=>r.join('|')===scenario.route.join('|')||r[1]===scenario.route[0]&&r[0]===scenario.route[1]))scenario=construct(null);
@@ -474,6 +489,9 @@ function renderSettings(){const searched=DATA.failures.filter(f=>(editor.edits[f
  <option value="any" ${positionGroup()==='any'?'selected':''}>Any position</option>
  <option value="airborne" ${positionGroup()==='airborne'?'selected':''}>Airborne</option>
  <option value="not-airborne" ${positionGroup()==='not-airborne'?'selected':''}>Not airborne</option>
+ <option value="climb" ${positionGroup()==='climb'?'selected':''}>On climb</option>
+ <option value="cruise" ${positionGroup()==='cruise'?'selected':''}>Cruise</option>
+ <option value="descent" ${positionGroup()==='descent'?'selected':''}>On descent</option>
  </select></div>${positionNotice?`<div class="position-notice" role="alert">${escapeHtml(positionNotice)}</div>`:''}</section>`;
  const lock=syncRouteLock();
  const availableDeparture=[...new Set(ORDERED_ROUTES.filter(r=>!lock.destination||r[1]===lock.destination).map(r=>r[0]))].sort((a,b)=>a.localeCompare(b));
@@ -487,7 +505,7 @@ function renderSettings(){const searched=DATA.failures.filter(f=>(editor.edits[f
  out+=`<section class="settings-box"><div class="section-title">Route frequency</div><div class="route-lock-summary" style="margin:-3px 0 9px">★ = more frequent, not fixed</div><input class="search" id="routeSearch" placeholder="Search routes" value="${escapeHtml(routeQuery)}" aria-label="Search routes"><div class="modes">`;
  for(const r of routes){const key=routeKey(r),pinned=!!editor.routePins[key],mode=editor.routeModes[key]||'normal';out+=`<div class="route-row"><div class="name">${escapeHtml(r[0])} ↔ ${escapeHtml(r[1])}</div><select class="select" data-route-mode="${escapeHtml(key)}" aria-label="Route frequency for ${escapeHtml(r.join(' to '))}"><option value="normal" ${mode==='normal'?'selected':''}>Normal</option><option value="more" ${mode==='more'?'selected':''}>More often</option></select><button class="pin-route ${pinned?'pinned':''}" data-action="pin-route" data-route="${escapeHtml(key)}" aria-pressed="${pinned}" aria-label="${pinned?'Remove frequency priority from':'Prioritize'} ${escapeHtml(r.join(' to '))}" title="${pinned?'Remove frequency priority':'Make route more frequent'}">${pinned?'★':'☆'}</button></div>`;}
  out+=`</div></section>`;
- out+=`<section class="settings-box"><div class="section-title">Failure frequency</div><input class="search" id="failureSearch" placeholder="Search failures" value="${escapeHtml(settingQuery)}" aria-label="Search failures"><div class="modes">`;
+ out+=`<section class="settings-box"><div class="section-title">Failure frequency</div><button class="toolbtn" data-action="reset-failure-frequency" style="width:100%;margin:0 0 12px" aria-label="Reset all failure frequency selections to Normal">Reset all failures to Normal</button><input class="search" id="failureSearch" placeholder="Search failures" value="${escapeHtml(settingQuery)}" aria-label="Search failures"><div class="modes">`;
  for(const f of searched){const n=(editor.edits[f.id]?.failure||f.failure);const mode=activeFailure(f);out+=`<div class="mode-row"><div class="name">${escapeHtml(n)}</div><select class="select" data-mode="${f.id}" aria-label="Frequency for ${escapeHtml(n)}"><option value="normal" ${mode==='normal'?'selected':''}>Normal</option><option value="more" ${mode==='more'?'selected':''}>More often</option><option value="only" ${mode==='only'?'selected':''}>Only</option></select><button class="editpick" data-action="edit" data-id="${f.id}">Edit</button></div>`;}
  out+='</div></section>';
  if(editId!==null){const f=DATA.failures.find(f=>f.id===editId);if(f){const e=editor.edits[editId]||{},rules=e.rules||f.rules;
@@ -527,11 +545,12 @@ function action(event){const btn=event.target.closest('button');if(!btn)return;
  if(act==='lock-current-sector'){editor.routeLock={departure:scenario.route[0],destination:scenario.route[1],sector:orderedRouteId(scenario.route)};save();renderSettings();return;}
  if(act==='clear-route-lock'){editor.routeLock={departure:'',destination:'',sector:''};save();renderSettings();return;}
  if(act==='pin-route'){editor.routePins ||= {};const key=btn.dataset.route;editor.routePins[key]=!editor.routePins[key];save();renderSettings();return;}
+ if(act==='reset-failure-frequency'){editor.modes={};positionNotice='';save();renderSettings();return;}
  if(act==='reveal'){reveal(btn.dataset.slot);return;}
  if(act==='flight'||act==='flight-field'||act==='wx-panel'||act==='wx-field'||act==='alt-panel'||act==='alt-airport'||act==='alt-wx-panel'||act==='alt-wx-field'||act==='failure-panel'||act==='failure-field'){rerollField(act,btn.dataset.field,Number(btn.dataset.index));return;}
  if(act==='edit'){editId=Number(btn.dataset.id);renderSettings();$('#editor')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
  if(act==='export-csv'){download('RTP_Study_Failures_v2.15.csv',csvOutput(),'text/csv;charset=utf-8');return;}
- if(act==='export-json'){download('RTP_Study_Backup_v2.15.json',JSON.stringify({version:2,editor,history,attempts,scenario},null,2),'application/json');return;}
+ if(act==='export-json'){download('RTP_Study_Backup_v2.19.json',JSON.stringify({version:2,editor,history,attempts,scenario},null,2),'application/json');return;}
  if(act==='import-csv'||act==='import-json'){const inp=$('#importFile');inp.value='';inp.accept=act==='import-csv'?'.csv,text/csv':'.json,application/json';inp.dataset.type=act==='import-csv'?'csv':'json';inp.click();return;}
 }
 document.addEventListener('click',action);
@@ -586,7 +605,7 @@ $('#importFile').addEventListener('change',async e=>{const file=e.target.files?.
  save();renderStudy();renderSettings();}catch(err){statusText='Import error: '+err.message;renderSettings();}
 });
 function loadBackcheck(){
- editor.modes ||= {};editor.edits ||= {};editor.routeModes ||= {};editor.routePins ||= {};syncRouteLock();
+ editor.modes ||= {};editor.edits ||= {};editor.routeModes ||= {};editor.routePins ||= {};syncRouteLock();migratePositionGroup();
  if(!canSelectGroup(positionGroup()))editor.positionGroup='any';
  if(!scenario||!scenario.route||!USABLE_ROUTES.some(r=>r.join('|')===scenario.route.join('|')||r[1]===scenario.route[0]&&r[0]===scenario.route[1]))scenario=construct(null);
  else {if(!matchesPositionGroup(scenario.position)||!candidates(scenario.position).length){const p=nextPosition(scenario,scenario.position);if(p!==null){concealFailure(scenario);scenario.position=p;refreshAlternates(scenario);}}ensureFailure(scenario);}
