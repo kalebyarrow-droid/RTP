@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0c1725">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>RTP Study · v2.11</title>
+<title>RTP Study · v2.12</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1522;--panel:#142335;--line:#2e4258;--muted:#a7bdcf;--text:#f2f6fb;--aqua:#76d6e9;--green:#a4e5bd;--red:#ffc0be}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
@@ -60,7 +60,7 @@ body.has-graded main{padding-bottom:calc(166px + env(safe-area-inset-bottom))}
 .input,.search,.select{border:1px solid #45637d;border-radius:8px;background:#102337;color:var(--text);padding:9px;max-width:100%;width:100%;font-size:13px}
 .s-label{display:block;margin:12px 0 5px;font-size:12px;color:var(--muted);font-weight:700}
 .modes{max-height:345px;overflow:auto;padding:0 4px 0 0}.mode-row{display:grid;grid-template-columns:minmax(0,1fr) 112px 38px;gap:7px;align-items:center;border-bottom:1px solid #293f55;padding:9px 0;font-size:12px}.mode-row .name{min-width:0;overflow-wrap:anywhere;line-height:1.28}.mode-row .select{font-size:11px;padding:7px}
-.route-row{display:grid;grid-template-columns:minmax(0,1fr) 96px 34px;gap:7px;align-items:center;border-bottom:1px solid #293f55;padding:7px 0;font-size:12px}
+.position-filter{margin-top:5px}.position-filter .select{width:100%;max-width:320px}.position-notice{margin:8px 0 0;color:var(--red);font-size:12px;line-height:1.35}.route-row{display:grid;grid-template-columns:minmax(0,1fr) 96px 34px;gap:7px;align-items:center;border-bottom:1px solid #293f55;padding:7px 0;font-size:12px}
 .route-row .name{line-height:1.35;overflow-wrap:anywhere;min-width:0}
 .route-row .select{font-size:11px;padding:7px}
 .pin-route{border:1px solid #3b5b72;border-radius:7px;background:#20384e;color:var(--muted);width:34px;height:33px;font-size:17px;padding:0}
@@ -107,7 +107,7 @@ nav::-webkit-scrollbar{display:none}
 </style>
 </head>
 <body>
-<header><div class="header-inner"><div class="brand">RTP STUDY<span class="version">v2.11</span></div><nav aria-label="App navigation"><button class="tab on" data-view="study">Study</button><button class="tab" data-view="guidance">Guidance</button><button class="tab" data-view="progress">Progress</button><button class="tab" data-view="settings">Settings</button></nav></div></header>
+<header><div class="header-inner"><div class="brand">RTP STUDY<span class="version">v2.12</span></div><nav aria-label="App navigation"><button class="tab on" data-view="study">Study</button><button class="tab" data-view="guidance">Guidance</button><button class="tab" data-view="progress">Progress</button><button class="tab" data-view="settings">Settings</button></nav></div></header>
 <main>
 <section id="view-study"><div class="toolbar"><button class="primary" data-action="new">↻ &nbsp;New scenario</button></div><div id="studyPanels"></div></section>
 <section id="view-guidance" class="hidden"><div class="guide-content">
@@ -253,10 +253,32 @@ function candidates(index){return activeFailures().filter(f=>eligible(f,index));
 function weightFailure(f){const h=history[f.id]||{};return (activeFailure(f)==='more'?4:1)*(1+Math.min(8,(h.incorrect||0)*1.6))/(1+Math.min(7,(h.correct||0)*.17));}
 function weighted(items,weight){if(!items.length)return null;let total=0;const weights=items.map(v=>{const w=Math.max(.0001,weight(v));total+=w;return w;});let x=Math.random()*total;for(let i=0;i<items.length;i++){x-=weights[i];if(x<=0)return items[i];}return items[items.length-1];}
 function stageAllowed(hours,index){if(hours<1.2&&[22,23,24,25,26,27].includes(index))return false;if(hours<1.7&&[23,24,27].includes(index))return false;return true;}
-function nextPosition(s,old){const h=durationHours(s.route);let a=DATA.positions.map((_,i)=>i).filter(i=>stageAllowed(h,i)&&i!==old&&candidates(i).length);
- if(!a.length)a=DATA.positions.map((_,i)=>i).filter(i=>i!==old&&candidates(i).length);
- return pick(a)||0;
+// Column C is chronological. Rotation is still ground; after lift-off and
+// before touchdown are airborne. Touchdown and all subsequent phases are ground.
+const AIRBORNE_FROM=16, AIRBORNE_TO=45;
+function positionGroup(){return ['any','airborne','not-airborne'].includes(editor.positionGroup)?editor.positionGroup:'any';}
+function matchesPositionGroup(index,group=positionGroup()){
+ if(group==='airborne')return index>=AIRBORNE_FROM&&index<=AIRBORNE_TO;
+ if(group==='not-airborne')return index<AIRBORNE_FROM||index>AIRBORNE_TO;
+ return true;
 }
+function availablePositions(s,old,group=positionGroup()){
+ const hours=durationHours(s.route);
+ const all=DATA.positions.map((_,i)=>i).filter(i=>matchesPositionGroup(i,group)&&candidates(i).length);
+ const preferred=all.filter(i=>stageAllowed(hours,i));
+ const pool=preferred.length?preferred:all;
+ return pool.filter(i=>i!==old).length?pool.filter(i=>i!==old):pool;
+}
+function canSelectGroup(group){
+ return DATA.positions.some((_,i)=>matchesPositionGroup(i,group)&&candidates(i).length);
+}
+function nextPosition(s,old){
+ const choices=availablePositions(s,old);
+ // If the user has made every failure mutually incompatible with the position
+ // filter, never fabricate a scenario outside their selected position category.
+ return choices.length?pick(choices):null;
+}
+
 // A failure is never exposed by scenario generation, a rules change, or regeneration.
 // Only the explicit failure reveal control may set failureVisible to true.
 function resetTimer(s){s.timerElapsed=0;s.timerStartedAt=null;s.timerRunning=false;}
@@ -266,8 +288,8 @@ function startTimer(s,fresh=false){if(fresh)s.timerElapsed=0;s.timerStartedAt=Da
 function stopTimer(s){if(!s.timerRunning)return;s.timerElapsed=elapsedMs(s);s.timerStartedAt=null;s.timerRunning=false;}
 function toggleTimer(){if(!scenario?.failureVisible)return;scenario.timerRunning?stopTimer(scenario):startTimer(scenario);save();renderStudy();}
 function concealFailure(s){s.failureVisible=false;s.answerVisible=false;s.grade=null;resetTimer(s);}
-function ensureFailure(s,{force=false}={}){let eligibleList=candidates(s.position);
- if(!eligibleList.length){s.position=nextPosition(s,s.position);eligibleList=candidates(s.position);}
+function ensureFailure(s,{force=false}={}){let eligibleList=matchesPositionGroup(s.position)?candidates(s.position):[];
+ if(!eligibleList.length){const position=nextPosition(s,s.position);if(position!==null){if(position!==s.position)concealFailure(s);s.position=position;}eligibleList=matchesPositionGroup(s.position)?candidates(s.position):[];}
  if(!eligibleList.length){s.failureId=null;concealFailure(s);return;}
  const remains=eligibleList.some(f=>f.id===s.failureId);
  if(force||!remains){const choices=eligibleList.filter(f=>f.id!==s.failureId);s.failureId=weighted(choices.length?choices:eligibleList,weightFailure).id;concealFailure(s);}
@@ -281,16 +303,17 @@ function newAlt(s,idx){const previous=s.alts[idx]?.airport||null;const used=s.al
 function newWeatherSet(s){s.dep=weather();s.dest=weather();s.alts[0].weather=weather();s.alts[1].weather=weather();for(let i=0;i<4;i++){for(const f of ['wind','temp','cloud','vis']){const w=i===0?s.dep:i===1?s.dest:s.alts[i-2].weather;w[f]=distinctField(s,f,i);}}}
 function construct(previous){const route=getRoute(previous?.route);
  const s={route,position:0,failureId:null,dep:{},dest:{},alts:[{airport:'',revealed:false,conditionsVisible:false,weather:{}},{airport:'',revealed:false,conditionsVisible:false,weather:{}}],shown:{depTakeoff:false,depRequirement:false,destLanding:false,destRequirement:false,alt0Landing:false,alt0Requirement:false,alt1Landing:false,alt1Requirement:false},failureVisible:false,answerVisible:false,grade:null,timerElapsed:0,timerStartedAt:null,timerRunning:false};
- s.position=nextPosition(s,null);ensureFailure(s,{force:true});
+ s.position=nextPosition(s,null);if(s.position===null)s.position=DATA.positions.findIndex((_,i)=>matchesPositionGroup(i));ensureFailure(s,{force:true});
  newAlt(s,0);newAlt(s,1);newWeatherSet(s);return s;
 }
-let editor={modes:{},edits:{},routeModes:{},routePins:{}};let history={};let attempts=[];let scenario=null;let currentView='study';let editId=null;let settingQuery='';let routeQuery='';let statusText='';
+let editor={modes:{},edits:{},routeModes:{},routePins:{},positionGroup:'any'};let history={};let attempts=[];let scenario=null;let currentView='study';let editId=null;let settingQuery='';let routeQuery='';let statusText='';let positionNotice='';
 function save(){try{localStorage.setItem(STORE,JSON.stringify({version:2,editor,history,attempts,scenario}));}catch(e){} }
 function load(){try{const obj=JSON.parse(localStorage.getItem(STORE));if(obj&&obj.version===2){editor={...editor,...(obj.editor||{})};history=obj.history||history;attempts=Array.isArray(obj.attempts)?obj.attempts:[];scenario=obj.scenario||null;}}catch(e){}
  editor.modes ||= {};editor.edits ||= {};editor.routeModes ||= {};editor.routePins ||= {};
+ if(!canSelectGroup(positionGroup()))editor.positionGroup='any';
  for(const f of DATA.failures){if(editor.edits[f.id]&&!Array.isArray(editor.edits[f.id].rules))editor.edits[f.id].rules=f.rules.slice();}
  if(!scenario||!scenario.route||!scenario.dep||!scenario.alts||!scenario.shown||scenario.alts.length!==2||!USABLE_ROUTES.some(r=>r.join('|')===scenario.route.join('|')||r[1]===scenario.route[0]&&r[0]===scenario.route[1]))scenario=construct(null);
- else ensureFailure(scenario);
+ else {if(!matchesPositionGroup(scenario.position)||!candidates(scenario.position).length){concealFailure(scenario);const p=nextPosition(scenario,scenario.position);if(p!==null)scenario.position=p;}ensureFailure(scenario);}
  if(scenario.failureVisible&&scenario.timerStartedAt===undefined){startTimer(scenario,true);if(scenario.answerVisible||scenario.grade)stopTimer(scenario);}
  save();
 }
@@ -298,7 +321,7 @@ function failureRecord(){const x=DATA.failures.find(f=>f.id===scenario.failureId
 function rerollField(action,field,index){const s=scenario;
  if(action==='flight'){concealFailure(s);s.route=getRoute(s.route);s.position=nextPosition(s,s.position);newAlt(s,0);newAlt(s,1);ensureFailure(s);}
  if(action==='flight-field'){
-  if(field==='route'){concealFailure(s);s.route=getRoute(s.route);newAlt(s,0);newAlt(s,1);if(!stageAllowed(durationHours(s.route),s.position))s.position=nextPosition(s,s.position);ensureFailure(s);}
+  if(field==='route'){concealFailure(s);s.route=getRoute(s.route);newAlt(s,0);newAlt(s,1);if(!stageAllowed(durationHours(s.route),s.position)||!matchesPositionGroup(s.position)){const p=nextPosition(s,s.position);if(p!==null)s.position=p;}ensureFailure(s);}
   if(field==='position'){concealFailure(s);s.position=nextPosition(s,s.position);ensureFailure(s);}
  }
  if(action==='wx-panel'||action==='wx-field'){
@@ -373,7 +396,12 @@ function renderProgress(){const records=Object.values(history);const corr=record
 }
 function renderSettings(){const searched=DATA.failures.filter(f=>(editor.edits[f.id]?.failure||f.failure).toLowerCase().includes(settingQuery.toLowerCase()));
  const routes=USABLE_ROUTES.filter(r=>r.join(' ').toLowerCase().includes(routeQuery.toLowerCase()));
- let out=`<section class="settings-box"><div class="section-title">Route frequency</div><input class="search" id="routeSearch" placeholder="Search routes" value="${escapeHtml(routeQuery)}" aria-label="Search routes"><div class="modes">`;
+ let out=`<section class="settings-box"><div class="section-title">General position</div><div class="position-filter"><select class="select" id="positionGroup" aria-label="General position">
+ <option value="any" ${positionGroup()==='any'?'selected':''}>Any position</option>
+ <option value="airborne" ${positionGroup()==='airborne'?'selected':''}>Airborne</option>
+ <option value="not-airborne" ${positionGroup()==='not-airborne'?'selected':''}>Not airborne</option>
+ </select></div>${positionNotice?`<div class="position-notice" role="alert">${escapeHtml(positionNotice)}</div>`:''}</section>`;
+ out+=`<section class="settings-box"><div class="section-title">Route frequency</div><input class="search" id="routeSearch" placeholder="Search routes" value="${escapeHtml(routeQuery)}" aria-label="Search routes"><div class="modes">`;
  for(const r of routes){const key=routeKey(r),pinned=!!editor.routePins[key],mode=editor.routeModes[key]||'normal';out+=`<div class="route-row"><div class="name">${escapeHtml(r[0])} ↔ ${escapeHtml(r[1])}</div><select class="select" data-route-mode="${escapeHtml(key)}" aria-label="Route frequency for ${escapeHtml(r.join(' to '))}"><option value="normal" ${mode==='normal'?'selected':''}>Normal</option><option value="more" ${mode==='more'?'selected':''}>More often</option></select><button class="pin-route ${pinned?'pinned':''}" data-action="pin-route" data-route="${escapeHtml(key)}" aria-pressed="${pinned}" aria-label="${pinned?'Unpin':'Pin'} ${escapeHtml(r.join(' to '))}" title="${pinned?'Unpin route':'Pin route'}">${pinned?'★':'☆'}</button></div>`;}
  out+=`</div></section>`;
  out+=`<section class="settings-box"><div class="section-title">Failure frequency</div><input class="search" id="failureSearch" placeholder="Search failures" value="${escapeHtml(settingQuery)}" aria-label="Search failures"><div class="modes">`;
@@ -417,8 +445,8 @@ function action(event){const btn=event.target.closest('button');if(!btn)return;
  if(act==='reveal'){reveal(btn.dataset.slot);return;}
  if(act==='flight'||act==='flight-field'||act==='wx-panel'||act==='wx-field'||act==='alt-panel'||act==='alt-airport'||act==='alt-wx-panel'||act==='alt-wx-field'||act==='failure-panel'||act==='failure-field'){rerollField(act,btn.dataset.field,Number(btn.dataset.index));return;}
  if(act==='edit'){editId=Number(btn.dataset.id);renderSettings();$('#editor')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
- if(act==='export-csv'){download('RTP_Study_Failures_v2.11.csv',csvOutput(),'text/csv;charset=utf-8');return;}
- if(act==='export-json'){download('RTP_Study_Backup_v2.11.json',JSON.stringify({version:2,editor,history,attempts,scenario},null,2),'application/json');return;}
+ if(act==='export-csv'){download('RTP_Study_Failures_v2.12.csv',csvOutput(),'text/csv;charset=utf-8');return;}
+ if(act==='export-json'){download('RTP_Study_Backup_v2.12.json',JSON.stringify({version:2,editor,history,attempts,scenario},null,2),'application/json');return;}
  if(act==='import-csv'||act==='import-json'){const inp=$('#importFile');inp.value='';inp.accept=act==='import-csv'?'.csv,text/csv':'.json,application/json';inp.dataset.type=act==='import-csv'?'csv':'json';inp.click();return;}
 }
 document.addEventListener('click',action);
@@ -428,8 +456,29 @@ document.addEventListener('input',e=>{if(e.target.id==='routeSearch'){const pos=
  if(e.target.matches('textarea[data-edit]')){failEdit(editId,e.target.dataset.edit,e.target.value);return;}
 });
 document.addEventListener('change',e=>{const t=e.target;
+ if(t.id==='positionGroup'){
+  const selected=t.value;
+  if(!canSelectGroup(selected)){
+   positionNotice='No eligible failures for this position setting. Change the “Only” failure selections first.';
+   renderSettings();return;
+  }
+  positionNotice='';editor.positionGroup=selected;
+  if(!matchesPositionGroup(scenario.position)||!candidates(scenario.position).length){
+   const p=nextPosition(scenario,scenario.position);
+   if(p!==null){concealFailure(scenario);scenario.position=p;ensureFailure(scenario);}
+  }
+  save();renderStudy();renderSettings();return;
+ }
  if(t.matches('select[data-route-mode]')){editor.routeModes ||= {};editor.routeModes[t.dataset.routeMode]=t.value;save();return;}
- if(t.matches('select[data-mode]')){editor.modes[Number(t.dataset.mode)]=t.value;ensureFailure(scenario);save();renderStudy();return;}
+ if(t.matches('select[data-mode]')){
+  const id=Number(t.dataset.mode),before=editor.modes[id]||'normal';editor.modes[id]=t.value;
+  if(!canSelectGroup(positionGroup())){
+   editor.modes[id]=before;positionNotice='This failure selection has no eligible positions with the current filter.';renderSettings();return;
+  }
+  positionNotice='';
+  if(!candidates(scenario.position).length){const p=nextPosition(scenario,scenario.position);if(p!==null){concealFailure(scenario);scenario.position=p;}}
+  ensureFailure(scenario);save();renderStudy();return;
+ }
  if(t.matches('select[data-rule]')){const f=DATA.failures.find(f=>f.id===editId);if(!f)return;const rules=[...(editor.edits[editId]?.rules||f.rules)];rules[Number(t.dataset.rule)]=t.value;failEdit(editId,'rules',rules);ensureFailure(scenario);save();renderStudy();return;}
 });
 $('#importFile').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const content=await file.text();
@@ -437,7 +486,12 @@ $('#importFile').addEventListener('change',async e=>{const file=e.target.files?.
  else {const o=JSON.parse(content);if(o.version!==2||!o.editor||!o.history||!Array.isArray(o.attempts))throw new Error('Invalid backup');editor={modes:{},edits:{},routeModes:{},routePins:{},...o.editor};history=o.history;attempts=o.attempts;scenario=o.scenario;loadBackcheck();statusText='Backup restored';}
  save();renderStudy();renderSettings();}catch(err){statusText='Import error: '+err.message;renderSettings();}
 });
-function loadBackcheck(){if(!scenario||!scenario.route||!USABLE_ROUTES.some(r=>r.join('|')===scenario.route.join('|')||r[1]===scenario.route[0]&&r[0]===scenario.route[1]))scenario=construct(null);else ensureFailure(scenario);}
+function loadBackcheck(){
+ editor.modes ||= {};editor.edits ||= {};editor.routeModes ||= {};editor.routePins ||= {};
+ if(!canSelectGroup(positionGroup()))editor.positionGroup='any';
+ if(!scenario||!scenario.route||!USABLE_ROUTES.some(r=>r.join('|')===scenario.route.join('|')||r[1]===scenario.route[0]&&r[0]===scenario.route[1]))scenario=construct(null);
+ else {if(!matchesPositionGroup(scenario.position)||!candidates(scenario.position).length){const p=nextPosition(scenario,scenario.position);if(p!==null){concealFailure(scenario);scenario.position=p;}}ensureFailure(scenario);}
+}
 load();renderStudy();switchView('study');
 // Update only the stopwatch text, without rerendering or disturbing the study screen.
 setInterval(()=>{if(currentView==='study'&&scenario?.failureVisible&&scenario.timerRunning){const el=$('#failureTimer');if(el)el.textContent=timerText(elapsedMs(scenario));}},250);
