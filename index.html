@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0c1725">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>RTP Study · v2.12</title>
+<title>RTP Study · v2.16</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1522;--panel:#142335;--line:#2e4258;--muted:#a7bdcf;--text:#f2f6fb;--aqua:#76d6e9;--green:#a4e5bd;--red:#ffc0be}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
@@ -30,6 +30,7 @@ main{max-width:750px;margin:0 auto;padding:12px 12px calc(108px + env(safe-area-
 .row .val.route{font-weight:850;font-size:17px;line-height:1.35}
 .row .val.pos{font-weight:700}
 .row .val.fob{font-size:18px;color:var(--green);font-weight:830}
+.row .val.current-weight{font-size:18px;color:var(--text);font-weight:830}
 .row .roll{margin-top:1px}
 .blank{color:#e9f6fd;background:#1c354c;border:1px dashed #55718a;border-radius:8px;padding:7px 10px;text-align:left;min-height:31px;font-weight:680;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.25}
 .blank.revealed{color:var(--text);border-style:solid;border-color:#345269;background:#192f43}
@@ -60,7 +61,7 @@ body.has-graded main{padding-bottom:calc(166px + env(safe-area-inset-bottom))}
 .input,.search,.select{border:1px solid #45637d;border-radius:8px;background:#102337;color:var(--text);padding:9px;max-width:100%;width:100%;font-size:13px}
 .s-label{display:block;margin:12px 0 5px;font-size:12px;color:var(--muted);font-weight:700}
 .modes{max-height:345px;overflow:auto;padding:0 4px 0 0}.mode-row{display:grid;grid-template-columns:minmax(0,1fr) 112px 38px;gap:7px;align-items:center;border-bottom:1px solid #293f55;padding:9px 0;font-size:12px}.mode-row .name{min-width:0;overflow-wrap:anywhere;line-height:1.28}.mode-row .select{font-size:11px;padding:7px}
-.position-filter{margin-top:5px}.position-filter .select{width:100%;max-width:320px}.position-notice{margin:8px 0 0;color:var(--red);font-size:12px;line-height:1.35}.route-row{display:grid;grid-template-columns:minmax(0,1fr) 96px 34px;gap:7px;align-items:center;border-bottom:1px solid #293f55;padding:7px 0;font-size:12px}
+.route-lock-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.route-lock-grid .s-label{margin:0 0 6px}.route-lock-full{grid-column:1/-1}.route-lock-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}.route-lock-actions .toolbtn{flex:1;min-width:128px}.route-lock-summary{font-size:11px;color:var(--muted);margin:9px 0 0}.position-filter{margin-top:5px}.position-filter .select{width:100%;max-width:320px}.position-notice{margin:8px 0 0;color:var(--red);font-size:12px;line-height:1.35}.route-row{display:grid;grid-template-columns:minmax(0,1fr) 96px 34px;gap:7px;align-items:center;border-bottom:1px solid #293f55;padding:7px 0;font-size:12px}
 .route-row .name{line-height:1.35;overflow-wrap:anywhere;min-width:0}
 .route-row .select{font-size:11px;padding:7px}
 .pin-route{border:1px solid #3b5b72;border-radius:7px;background:#20384e;color:var(--muted);width:34px;height:33px;font-size:17px;padding:0}
@@ -90,6 +91,9 @@ nav::-webkit-scrollbar{display:none}
 .guide-step h3,.guide-process h3{font-size:13px;color:var(--aqua);font-weight:760;margin:0 0 7px;line-height:1.35}
 .guide-list{list-style-type:disc;padding-left:20px;margin:4px 0 0;line-height:1.5}
 .guide-list li{margin:4px 0;font-size:13px;overflow-wrap:break-word}
+.guide-tac{list-style:none;padding-left:0}
+.guide-tac li{display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;align-items:start}
+.guide-tac li strong{color:var(--aqua);font-weight:800;font-size:14px}
 .guide-emphasis{padding:12px 13px;border:1px solid #42617a;border-radius:9px;background:#183047;color:#eaf8ff;font-size:13px;font-weight:750;line-height:1.5;margin:10px 0}
 .guide-footnote{font-size:13px;line-height:1.5;color:#d8e7f3;margin:13px 0 0}
 .guide-process-list{display:grid;gap:0}
@@ -107,7 +111,7 @@ nav::-webkit-scrollbar{display:none}
 </style>
 </head>
 <body>
-<header><div class="header-inner"><div class="brand">RTP STUDY<span class="version">v2.12</span></div><nav aria-label="App navigation"><button class="tab on" data-view="study">Study</button><button class="tab" data-view="guidance">Guidance</button><button class="tab" data-view="progress">Progress</button><button class="tab" data-view="settings">Settings</button></nav></div></header>
+<header><div class="header-inner"><div class="brand">RTP STUDY<span class="version">v2.16</span></div><nav aria-label="App navigation"><button class="tab on" data-view="study">Study</button><button class="tab" data-view="guidance">Guidance</button><button class="tab" data-view="progress">Progress</button><button class="tab" data-view="settings">Settings</button></nav></div></header>
 <main>
 <section id="view-study"><div class="toolbar"><button class="primary" data-action="new">↻ &nbsp;New scenario</button></div><div id="studyPanels"></div></section>
 <section id="view-guidance" class="hidden"><div class="guide-content">
@@ -115,7 +119,7 @@ nav::-webkit-scrollbar{display:none}
  <section class="guide-group"><h2>Initial stage</h2>
   <div class="guide-step"><h3>I HAVE CONTROL- Fly the aircraft</h3><ul class="guide-list"><li>PFD (FPV relative to horizon)</li><li>Trim for pitch/Rudder</li><li>Call for appropriate modes</li><li>Engage AP/AT</li><li>MSA/SEFP</li></ul></div>
   <p class="guide-emphasis">“AIRCRAFT IS SAFE AND IN CONTROL - CONFIRM THE FAILURE”</p>
-  <div class="guide-step"><h3>Immediate Action Items/Memory items</h3><ul class="guide-list"><li>CON thrust if necessary</li><li>APU</li><li>CB (can’t fix a system if the CB has popped)</li></ul></div>
+  <div class="guide-step"><h3>Immediate Action items/Memory items</h3><ul class="guide-list guide-tac"><li><strong>T</strong><span>Adjust thrust as necessary</span></li><li><strong>A</strong><span>APU</span></li><li><strong>C</strong><span>CB (can’t fix a system if the CB has popped)</span></li></ul></div>
   <div class="guide-step"><h3>Checklist sequence</h3><ul class="guide-list"><li>NNC</li><li>System recall</li><li>NNC</li><li>NC</li><li>DDG</li></ul></div>
   <p class="guide-footnote">Constantly review a Short term plan/ATC (MAYDAY/PAN PAN/ATC/CTAF)</p>
  </section>
@@ -209,15 +213,78 @@ function candidateAlts(a,b){const key=a+'|'+b;if(ALT_CACHE.has(key))return ALT_C
  if(choices.length<2)choices=all.filter(v=>v.t>=-.35&&v.t<=1.35&&v.d<Math.max(650,corridor*1.5)).sort((x,y)=>x.score-y.score);
  const names=choices.map(x=>x.name);ALT_CACHE.set(key,names);return names;
 }
+// Geographical diversion practice: place the aircraft along the actual route, then
+// search locally, rather than always choosing airports near the route midpoint.
+function routeFraction(s){
+ const i=s.position, h=durationHours(s.route);
+ if(i<=15)return 0;
+ if(i<=21)return [0.015,0.025,0.04,0.06,0.085,0.11][i-16];
+ if(i===22)return 0.14;
+ if(i===23)return 0.18;
+ if(i===24)return 0.22;
+ if(i===25)return Math.max(.22,Math.min(.88,1/h));
+ if(i===26)return Math.max(.12,Math.min(.89,1-1/h));
+ if(i===27)return .5;
+ if(i===28)return Math.max(.78,Math.min(.95,1-.42/h));
+ if(i<=33)return .84+(i-29)*.02;
+ if(i<=45)return .95+(i-34)*.004;
+ return 1;
+}
+function sphericalPoint(a,b,f){
+ const rad=Math.PI/180, toXYZ=p=>[Math.cos(p[0]*rad)*Math.cos(p[1]*rad),Math.cos(p[0]*rad)*Math.sin(p[1]*rad),Math.sin(p[0]*rad)];
+ const x=toXYZ(a),y=toXYZ(b),dot=Math.max(-1,Math.min(1,x.reduce((v,n,i)=>v+n*y[i],0))),angle=Math.acos(dot);
+ if(angle<1e-9)return a;
+ const q=Math.sin(angle),u=Math.sin((1-f)*angle)/q,v=Math.sin(f*angle)/q;
+ const p=x.map((n,i)=>u*n+v*y[i]);return [Math.atan2(p[2],Math.hypot(p[0],p[1]))/rad,Math.atan2(p[1],p[0])/rad];
+}
+function alternateArea(s){const i=s.position,t=routeFraction(s);return i<=24?'Departure area':i>=28||i===26&&t>=.72?'Destination area':'En route area';}
+function localAlternates(s){
+ const [a,b]=s.route,A=DATA.coords[a],B=DATA.coords[b],fraction=routeFraction(s),current=sphericalPoint(A,B,fraction),leg=distance(a,b),area=alternateArea(s);
+ let choices=AIRPORT_POOL.filter(n=>n!==a&&n!==b&&DATA.coords[n]).map(name=>({name,near:earthKm(current,DATA.coords[name]),atDeparture:earthKm(A,DATA.coords[name]),atDestination:earthKm(B,DATA.coords[name])}));
+ // Departure/arrival selections must stay within a realistic local region.
+ if(area!=='En route area'){
+  const radius=Math.max(650,Math.min(1450,leg*.35));
+  const bounded=choices.filter(v=>(area==='Departure area'?v.atDeparture:v.atDestination)<=radius);
+  if(bounded.length>=2)choices=bounded;
+ }
+ choices.sort((x,y)=>x.near-y.near);
+ // Keep both alternates local even for sparsely populated or over-water legs.
+ const localLimit=Math.max(350,Math.min(1400,(choices[Math.min(5,choices.length-1)]?.near||0)*1.6));
+ const shortlist=choices.filter(v=>v.near<=localLimit).slice(0,10);
+ return (shortlist.length>=2?shortlist:choices.slice(0,Math.max(2,shortlist.length))).map(v=>v.name);
+}
+function refreshAlternates(s){newAlt(s,0);newAlt(s,1);s.altGeoVersion=1;}
 const USABLE_ROUTES=DATA.routes.filter(r=>DATA.coords[r[0]]&&DATA.coords[r[1]]&&candidateAlts(r[0],r[1]).length>=2);
-// Route preferences apply in both directions and are separate from failure frequency.
+// Frequencies are symmetric; sector locks are directional and must match real route pairs.
 function routeKey(route){return [...route].sort((a,b)=>a.localeCompare(b)).join('¦');}
 function routeWeight(route){const key=routeKey(route);return editor.routePins?.[key]?20:editor.routeModes?.[key]==='more'?5:1;}
+const ORDERED_ROUTES=USABLE_ROUTES.flatMap(r=>[[...r],[r[1],r[0]]]).filter((r,i,all)=>all.findIndex(t=>t[0]===r[0]&&t[1]===r[1])===i);
+function orderedRouteId(r){return r.join('|');}
+function routeLock(){const lock=editor.routeLock||{};return {departure:lock.departure||'',destination:lock.destination||'',sector:lock.sector||''};}
+function validOrderedRoute(route){return !!route&&ORDERED_ROUTES.some(r=>r[0]===route[0]&&r[1]===route[1]);}
+function syncRouteLock(){
+ const lock=routeLock();
+ const exact=ORDERED_ROUTES.find(r=>orderedRouteId(r)===lock.sector);
+ if(exact){lock.departure=exact[0];lock.destination=exact[1];}
+ else {
+  lock.sector='';
+  if(!ORDERED_ROUTES.some(r=>r[0]===lock.departure))lock.departure='';
+  if(!ORDERED_ROUTES.some(r=>r[1]===lock.destination))lock.destination='';
+  if(lock.departure&&lock.destination&&!validOrderedRoute([lock.departure,lock.destination]))lock.destination='';
+ }
+ editor.routeLock=lock;
+ return lock;
+}
 function getRoute(previous){
- const available=USABLE_ROUTES.filter(r=>!previous||routeKey(r)!==routeKey(previous));
- const chosen=weighted(available.length?available:USABLE_ROUTES,routeWeight);
- if(!chosen)return null;
- return Math.random()<.5?[...chosen]:[chosen[1],chosen[0]];
+ const lock=syncRouteLock();
+ if(lock.sector)return lock.sector.split('|');
+ let options=ORDERED_ROUTES.filter(r=>(!lock.departure||r[0]===lock.departure)&&(!lock.destination||r[1]===lock.destination));
+ if(!options.length)options=ORDERED_ROUTES;
+ // Prefer a different route when available, but never leave the locked aerodrome(s).
+ const changed=options.filter(r=>!previous||orderedRouteId(r)!==orderedRouteId(previous));
+ const eligible=changed.length?changed:options;
+ const chosen=weighted(eligible,routeWeight);
+ return chosen?[...chosen]:null;
 }
 function durationHours(route){return Math.max(.66,.37+distance(route[0],route[1])/755);}
 function sectorBurn(hours){const beforeFinal=Math.max(0,hours-25/60);return 2.7*Math.min(beforeFinal,1)+2*Math.max(0,beforeFinal-1)+.3;}
@@ -294,35 +361,40 @@ function ensureFailure(s,{force=false}={}){let eligibleList=matchesPositionGroup
  const remains=eligibleList.some(f=>f.id===s.failureId);
  if(force||!remains){const choices=eligibleList.filter(f=>f.id!==s.failureId);s.failureId=weighted(choices.length?choices:eligibleList,weightFailure).id;concealFailure(s);}
 }
-function newAlt(s,idx){const previous=s.alts[idx]?.airport||null;const used=s.alts[1-idx]?.airport;
- const options=candidateAlts(...s.route).slice(0,16).filter(n=>n!==used&&n!==previous);
- const fallback=candidateAlts(...s.route).filter(n=>n!==used);
- const selected=options.length?options:fallback;
- s.alts[idx].airport=weighted(selected,n=>{const rank=candidateAlts(...s.route).indexOf(n);return 1/(1+rank*.38);})||'';
+function newAlt(s,idx){
+ const previous=s.alts[idx]?.airport||null,used=s.alts[1-idx]?.airport;
+ const regional=localAlternates(s),options=regional.filter(n=>n!==previous&&n!==used);
+ const fallback=regional.filter(n=>n!==used),selected=options.length?options:fallback;
+ // Strong local bias: proximity matters much more than an airport's place in a route-wide list.
+ const location=sphericalPoint(DATA.coords[s.route[0]],DATA.coords[s.route[1]],routeFraction(s));
+ s.alts[idx].airport=weighted(selected,n=>1/Math.pow(Math.max(65,earthKm(location,DATA.coords[n])),1.7))||'';
+ s.altGeoVersion=1;
 }
 function newWeatherSet(s){s.dep=weather();s.dest=weather();s.alts[0].weather=weather();s.alts[1].weather=weather();for(let i=0;i<4;i++){for(const f of ['wind','temp','cloud','vis']){const w=i===0?s.dep:i===1?s.dest:s.alts[i-2].weather;w[f]=distinctField(s,f,i);}}}
 function construct(previous){const route=getRoute(previous?.route);
  const s={route,position:0,failureId:null,dep:{},dest:{},alts:[{airport:'',revealed:false,conditionsVisible:false,weather:{}},{airport:'',revealed:false,conditionsVisible:false,weather:{}}],shown:{depTakeoff:false,depRequirement:false,destLanding:false,destRequirement:false,alt0Landing:false,alt0Requirement:false,alt1Landing:false,alt1Requirement:false},failureVisible:false,answerVisible:false,grade:null,timerElapsed:0,timerStartedAt:null,timerRunning:false};
  s.position=nextPosition(s,null);if(s.position===null)s.position=DATA.positions.findIndex((_,i)=>matchesPositionGroup(i));ensureFailure(s,{force:true});
- newAlt(s,0);newAlt(s,1);newWeatherSet(s);return s;
+ refreshAlternates(s);newWeatherSet(s);return s;
 }
-let editor={modes:{},edits:{},routeModes:{},routePins:{},positionGroup:'any'};let history={};let attempts=[];let scenario=null;let currentView='study';let editId=null;let settingQuery='';let routeQuery='';let statusText='';let positionNotice='';
+let editor={modes:{},edits:{},routeModes:{},routePins:{},routeLock:{departure:'',destination:'',sector:''},positionGroup:'any',zfwTonnes:59};let history={};let attempts=[];let scenario=null;let currentView='study';let editId=null;let settingQuery='';let routeQuery='';let statusText='';let positionNotice='';
+function zfwTonnes(){const value=Number(editor.zfwTonnes);return Number.isFinite(value)&&value>0?value:59;}
 function save(){try{localStorage.setItem(STORE,JSON.stringify({version:2,editor,history,attempts,scenario}));}catch(e){} }
 function load(){try{const obj=JSON.parse(localStorage.getItem(STORE));if(obj&&obj.version===2){editor={...editor,...(obj.editor||{})};history=obj.history||history;attempts=Array.isArray(obj.attempts)?obj.attempts:[];scenario=obj.scenario||null;}}catch(e){}
- editor.modes ||= {};editor.edits ||= {};editor.routeModes ||= {};editor.routePins ||= {};
+ editor.modes ||= {};editor.edits ||= {};editor.routeModes ||= {};editor.routePins ||= {};syncRouteLock();
  if(!canSelectGroup(positionGroup()))editor.positionGroup='any';
  for(const f of DATA.failures){if(editor.edits[f.id]&&!Array.isArray(editor.edits[f.id].rules))editor.edits[f.id].rules=f.rules.slice();}
  if(!scenario||!scenario.route||!scenario.dep||!scenario.alts||!scenario.shown||scenario.alts.length!==2||!USABLE_ROUTES.some(r=>r.join('|')===scenario.route.join('|')||r[1]===scenario.route[0]&&r[0]===scenario.route[1]))scenario=construct(null);
  else {if(!matchesPositionGroup(scenario.position)||!candidates(scenario.position).length){concealFailure(scenario);const p=nextPosition(scenario,scenario.position);if(p!==null)scenario.position=p;}ensureFailure(scenario);}
+ if(scenario.altGeoVersion!==1)refreshAlternates(scenario);
  if(scenario.failureVisible&&scenario.timerStartedAt===undefined){startTimer(scenario,true);if(scenario.answerVisible||scenario.grade)stopTimer(scenario);}
  save();
 }
 function failureRecord(){const x=DATA.failures.find(f=>f.id===scenario.failureId);if(!x)return {id:-1,failure:'',qrh:'',notes:''};return {...x,...(editor.edits[x.id]||{}),rules:(editor.edits[x.id]?.rules)||x.rules};}
 function rerollField(action,field,index){const s=scenario;
- if(action==='flight'){concealFailure(s);s.route=getRoute(s.route);s.position=nextPosition(s,s.position);newAlt(s,0);newAlt(s,1);ensureFailure(s);}
+ if(action==='flight'){concealFailure(s);s.route=getRoute(s.route);s.position=nextPosition(s,s.position);refreshAlternates(s);ensureFailure(s);}
  if(action==='flight-field'){
-  if(field==='route'){concealFailure(s);s.route=getRoute(s.route);newAlt(s,0);newAlt(s,1);if(!stageAllowed(durationHours(s.route),s.position)||!matchesPositionGroup(s.position)){const p=nextPosition(s,s.position);if(p!==null)s.position=p;}ensureFailure(s);}
-  if(field==='position'){concealFailure(s);s.position=nextPosition(s,s.position);ensureFailure(s);}
+  if(field==='route'){concealFailure(s);s.route=getRoute(s.route);if(!stageAllowed(durationHours(s.route),s.position)||!matchesPositionGroup(s.position)){const p=nextPosition(s,s.position);if(p!==null)s.position=p;}refreshAlternates(s);ensureFailure(s);}
+  if(field==='position'){concealFailure(s);s.position=nextPosition(s,s.position);refreshAlternates(s);ensureFailure(s);}
  }
  if(action==='wx-panel'||action==='wx-field'){
   const w=index===0?s.dep:s.dest;
@@ -356,7 +428,7 @@ function weatherCard(name,w,idx,heading){const prefix=idx===0?'dep':'dest';let h
  html+=row('Requirement',null,'wx-field','requirement',idx,'',emptySlot('destRequirement','Requirement',scenario.shown.destRequirement,w.requirement));}
  return html+'</section>';
 }
-function altCard(idx){const a=scenario.alts[idx];let html=`<section class="panel">${cardTitle('Alternate '+(idx+1),'alt-panel',idx)}`;
+function altCard(idx){const a=scenario.alts[idx];let html=`<section class="panel">${cardTitle('Alternate '+(idx+1)+' · '+alternateArea(scenario),'alt-panel',idx)}`;
  if(!a.revealed){html+=`<div class="alt-top"><button class="blank fullblank" data-action="reveal" data-slot="alt${idx}">Tap here to reveal</button>${icon('alt-airport','',idx,'Regenerate alternate airport')}</div>`;}
  else {html+=`<div class="alt-top"><div class="alt-location">${escapeHtml(a.airport)}</div>${icon('alt-airport','',idx,'Regenerate alternate airport')}</div>`;
  if(!a.conditionsVisible){html+=`<button class="blank fullblank" data-action="reveal" data-slot="alt${idx}conditions">Conditions &nbsp; · &nbsp; Tap here to reveal</button>`;}
@@ -371,7 +443,8 @@ function renderStudy(){const s=scenario;if(!s)return;
  let out=`<section class="panel">${cardTitle('Flight','flight')}`;
  out+=row('Sector',ddLink(...s.route),'flight-field','route',-1,'route');
  out+=row('Position',DATA.positions[s.position],'flight-field','position',-1,'pos');
- out+=`<div class="row"><div class="key">FOB</div><div class="val fob">${fuelAt(s).toFixed(1)} t</div>${icon('flight-field','position',-1,'Regenerate position and FOB')}</div></section>`;
+ out+=`<div class="row"><div class="key">FOB</div><div class="val fob">${fuelAt(s).toFixed(1)} t</div>${icon('flight-field','position',-1,'Regenerate position and FOB')}</div>`;
+ out+=`<div class="row"><div class="key">Current Weight</div><div class="val current-weight">${(zfwTonnes()+fuelAt(s)).toFixed(1)} t</div><span aria-hidden="true"></span></div></section>`;
  out+=weatherCard('Departure · '+s.route[0],s.dep,0);
  out+=weatherCard('Destination · '+s.route[1],s.dest,1);
  out+=`<section class="panel"><div class="panel-head"><strong>Failure</strong><div class="right">${s.failureVisible?`<button class="stopwatch ${s.timerRunning?'running':''}" data-action="timer-toggle" title="${s.timerRunning?'Pause':'Resume'} stopwatch" aria-label="${s.timerRunning?'Pause':'Resume'} stopwatch"><span aria-hidden="true">⏱</span> <span id="failureTimer">${timerText(elapsedMs(s))}</span></button>`:''}${icon('failure-panel','','-1','Regenerate Failure')}</div></div>`;
@@ -396,13 +469,23 @@ function renderProgress(){const records=Object.values(history);const corr=record
 }
 function renderSettings(){const searched=DATA.failures.filter(f=>(editor.edits[f.id]?.failure||f.failure).toLowerCase().includes(settingQuery.toLowerCase()));
  const routes=USABLE_ROUTES.filter(r=>r.join(' ').toLowerCase().includes(routeQuery.toLowerCase()));
- let out=`<section class="settings-box"><div class="section-title">General position</div><div class="position-filter"><select class="select" id="positionGroup" aria-label="General position">
+ let out=`<section class="settings-box"><div class="section-title">Aircraft weight</div><label class="s-label" for="zfwTonnes">Zero Fuel Weight (t)</label><input class="input" id="zfwTonnes" type="number" inputmode="decimal" min="0.1" step="0.1" value="${zfwTonnes().toFixed(1)}" aria-label="Zero Fuel Weight in tonnes"></section>`;
+ out+=`<section class="settings-box"><div class="section-title">General position</div><div class="position-filter"><select class="select" id="positionGroup" aria-label="General position">
  <option value="any" ${positionGroup()==='any'?'selected':''}>Any position</option>
  <option value="airborne" ${positionGroup()==='airborne'?'selected':''}>Airborne</option>
  <option value="not-airborne" ${positionGroup()==='not-airborne'?'selected':''}>Not airborne</option>
  </select></div>${positionNotice?`<div class="position-notice" role="alert">${escapeHtml(positionNotice)}</div>`:''}</section>`;
- out+=`<section class="settings-box"><div class="section-title">Route frequency</div><input class="search" id="routeSearch" placeholder="Search routes" value="${escapeHtml(routeQuery)}" aria-label="Search routes"><div class="modes">`;
- for(const r of routes){const key=routeKey(r),pinned=!!editor.routePins[key],mode=editor.routeModes[key]||'normal';out+=`<div class="route-row"><div class="name">${escapeHtml(r[0])} ↔ ${escapeHtml(r[1])}</div><select class="select" data-route-mode="${escapeHtml(key)}" aria-label="Route frequency for ${escapeHtml(r.join(' to '))}"><option value="normal" ${mode==='normal'?'selected':''}>Normal</option><option value="more" ${mode==='more'?'selected':''}>More often</option></select><button class="pin-route ${pinned?'pinned':''}" data-action="pin-route" data-route="${escapeHtml(key)}" aria-pressed="${pinned}" aria-label="${pinned?'Unpin':'Pin'} ${escapeHtml(r.join(' to '))}" title="${pinned?'Unpin route':'Pin route'}">${pinned?'★':'☆'}</button></div>`;}
+ const lock=syncRouteLock();
+ const availableDeparture=[...new Set(ORDERED_ROUTES.filter(r=>!lock.destination||r[1]===lock.destination).map(r=>r[0]))].sort((a,b)=>a.localeCompare(b));
+ const availableDestination=[...new Set(ORDERED_ROUTES.filter(r=>!lock.departure||r[0]===lock.departure).map(r=>r[1]))].sort((a,b)=>a.localeCompare(b));
+ const lockOptions=ORDERED_ROUTES.slice().sort((a,b)=>a[0].localeCompare(b[0])||a[1].localeCompare(b[1]));
+ out+=`<section class="settings-box"><div class="section-title">Sector selection</div><div class="route-lock-grid">
+ <div><label class="s-label" for="lockDeparture">Departure</label><select class="select" id="lockDeparture" aria-label="Fixed departure aerodrome"><option value="">Any aerodrome</option>${availableDeparture.map(n=>`<option value="${escapeHtml(n)}" ${lock.departure===n?'selected':''}>${escapeHtml(n)}</option>`).join('')}</select></div>
+ <div><label class="s-label" for="lockDestination">Destination</label><select class="select" id="lockDestination" aria-label="Fixed destination aerodrome"><option value="">Any aerodrome</option>${availableDestination.map(n=>`<option value="${escapeHtml(n)}" ${lock.destination===n?'selected':''}>${escapeHtml(n)}</option>`).join('')}</select></div>
+ <div class="route-lock-full"><label class="s-label" for="lockSector">Fixed sector</label><select class="select" id="lockSector" aria-label="Lock an exact sector"><option value="">No fixed sector</option>${lockOptions.map(r=>`<option value="${escapeHtml(orderedRouteId(r))}" ${lock.sector===orderedRouteId(r)?'selected':''}>${escapeHtml(r[0])} → ${escapeHtml(r[1])}</option>`).join('')}</select></div>
+ </div><div class="route-lock-actions"><button class="toolbtn" data-action="lock-current-sector">Lock current sector</button><button class="toolbtn" data-action="clear-route-lock">Clear locks</button></div><div class="route-lock-summary">${lock.sector?'Fixed sector: '+escapeHtml(lock.sector.replace('|',' → ')):lock.departure||lock.destination?`Departure: ${escapeHtml(lock.departure||'Any')} · Destination: ${escapeHtml(lock.destination||'Any')}`:'All sectors available'}</div></section>`;
+ out+=`<section class="settings-box"><div class="section-title">Route frequency</div><div class="route-lock-summary" style="margin:-3px 0 9px">★ = more frequent, not fixed</div><input class="search" id="routeSearch" placeholder="Search routes" value="${escapeHtml(routeQuery)}" aria-label="Search routes"><div class="modes">`;
+ for(const r of routes){const key=routeKey(r),pinned=!!editor.routePins[key],mode=editor.routeModes[key]||'normal';out+=`<div class="route-row"><div class="name">${escapeHtml(r[0])} ↔ ${escapeHtml(r[1])}</div><select class="select" data-route-mode="${escapeHtml(key)}" aria-label="Route frequency for ${escapeHtml(r.join(' to '))}"><option value="normal" ${mode==='normal'?'selected':''}>Normal</option><option value="more" ${mode==='more'?'selected':''}>More often</option></select><button class="pin-route ${pinned?'pinned':''}" data-action="pin-route" data-route="${escapeHtml(key)}" aria-pressed="${pinned}" aria-label="${pinned?'Remove frequency priority from':'Prioritize'} ${escapeHtml(r.join(' to '))}" title="${pinned?'Remove frequency priority':'Make route more frequent'}">${pinned?'★':'☆'}</button></div>`;}
  out+=`</div></section>`;
  out+=`<section class="settings-box"><div class="section-title">Failure frequency</div><input class="search" id="failureSearch" placeholder="Search failures" value="${escapeHtml(settingQuery)}" aria-label="Search failures"><div class="modes">`;
  for(const f of searched){const n=(editor.edits[f.id]?.failure||f.failure);const mode=activeFailure(f);out+=`<div class="mode-row"><div class="name">${escapeHtml(n)}</div><select class="select" data-mode="${f.id}" aria-label="Frequency for ${escapeHtml(n)}"><option value="normal" ${mode==='normal'?'selected':''}>Normal</option><option value="more" ${mode==='more'?'selected':''}>More often</option><option value="only" ${mode==='only'?'selected':''}>Only</option></select><button class="editpick" data-action="edit" data-id="${f.id}">Edit</button></div>`;}
@@ -441,12 +524,14 @@ function action(event){const btn=event.target.closest('button');if(!btn)return;
  if(act==='new'){scenario=construct(scenario);save();renderStudy();return;}
  if(act==='next'){if(!scenario?.grade)return;scenario=construct(scenario);save();renderStudy();window.scrollTo(0,0);return;}
  if(act==='timer-toggle'){toggleTimer();return;}
+ if(act==='lock-current-sector'){editor.routeLock={departure:scenario.route[0],destination:scenario.route[1],sector:orderedRouteId(scenario.route)};save();renderSettings();return;}
+ if(act==='clear-route-lock'){editor.routeLock={departure:'',destination:'',sector:''};save();renderSettings();return;}
  if(act==='pin-route'){editor.routePins ||= {};const key=btn.dataset.route;editor.routePins[key]=!editor.routePins[key];save();renderSettings();return;}
  if(act==='reveal'){reveal(btn.dataset.slot);return;}
  if(act==='flight'||act==='flight-field'||act==='wx-panel'||act==='wx-field'||act==='alt-panel'||act==='alt-airport'||act==='alt-wx-panel'||act==='alt-wx-field'||act==='failure-panel'||act==='failure-field'){rerollField(act,btn.dataset.field,Number(btn.dataset.index));return;}
  if(act==='edit'){editId=Number(btn.dataset.id);renderSettings();$('#editor')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
- if(act==='export-csv'){download('RTP_Study_Failures_v2.12.csv',csvOutput(),'text/csv;charset=utf-8');return;}
- if(act==='export-json'){download('RTP_Study_Backup_v2.12.json',JSON.stringify({version:2,editor,history,attempts,scenario},null,2),'application/json');return;}
+ if(act==='export-csv'){download('RTP_Study_Failures_v2.15.csv',csvOutput(),'text/csv;charset=utf-8');return;}
+ if(act==='export-json'){download('RTP_Study_Backup_v2.15.json',JSON.stringify({version:2,editor,history,attempts,scenario},null,2),'application/json');return;}
  if(act==='import-csv'||act==='import-json'){const inp=$('#importFile');inp.value='';inp.accept=act==='import-csv'?'.csv,text/csv':'.json,application/json';inp.dataset.type=act==='import-csv'?'csv':'json';inp.click();return;}
 }
 document.addEventListener('click',action);
@@ -456,6 +541,20 @@ document.addEventListener('input',e=>{if(e.target.id==='routeSearch'){const pos=
  if(e.target.matches('textarea[data-edit]')){failEdit(editId,e.target.dataset.edit,e.target.value);return;}
 });
 document.addEventListener('change',e=>{const t=e.target;
+ if(t.id==='zfwTonnes'){const value=Number(t.value);if(t.value.trim()&&Number.isFinite(value)&&value>0){editor.zfwTonnes=Math.round(value*10)/10;save();renderStudy();}renderSettings();return;}
+ if(t.id==='lockDeparture'||t.id==='lockDestination'){
+  const lock=syncRouteLock();
+  lock.sector='';
+  if(t.id==='lockDeparture')lock.departure=t.value;
+  else lock.destination=t.value;
+  editor.routeLock=lock;
+  syncRouteLock();save();renderSettings();return;
+ }
+ if(t.id==='lockSector'){
+  const exact=ORDERED_ROUTES.find(r=>orderedRouteId(r)===t.value);
+  editor.routeLock=exact?{departure:exact[0],destination:exact[1],sector:orderedRouteId(exact)}:{departure:'',destination:'',sector:''};
+  save();renderSettings();return;
+ }
  if(t.id==='positionGroup'){
   const selected=t.value;
   if(!canSelectGroup(selected)){
@@ -465,7 +564,7 @@ document.addEventListener('change',e=>{const t=e.target;
   positionNotice='';editor.positionGroup=selected;
   if(!matchesPositionGroup(scenario.position)||!candidates(scenario.position).length){
    const p=nextPosition(scenario,scenario.position);
-   if(p!==null){concealFailure(scenario);scenario.position=p;ensureFailure(scenario);}
+   if(p!==null){concealFailure(scenario);scenario.position=p;refreshAlternates(scenario);ensureFailure(scenario);}
   }
   save();renderStudy();renderSettings();return;
  }
@@ -476,21 +575,22 @@ document.addEventListener('change',e=>{const t=e.target;
    editor.modes[id]=before;positionNotice='This failure selection has no eligible positions with the current filter.';renderSettings();return;
   }
   positionNotice='';
-  if(!candidates(scenario.position).length){const p=nextPosition(scenario,scenario.position);if(p!==null){concealFailure(scenario);scenario.position=p;}}
+  if(!candidates(scenario.position).length){const p=nextPosition(scenario,scenario.position);if(p!==null){concealFailure(scenario);scenario.position=p;refreshAlternates(scenario);}}
   ensureFailure(scenario);save();renderStudy();return;
  }
  if(t.matches('select[data-rule]')){const f=DATA.failures.find(f=>f.id===editId);if(!f)return;const rules=[...(editor.edits[editId]?.rules||f.rules)];rules[Number(t.dataset.rule)]=t.value;failEdit(editId,'rules',rules);ensureFailure(scenario);save();renderStudy();return;}
 });
 $('#importFile').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const content=await file.text();
  if(e.target.dataset.type==='csv'){const n=importCSV(content);statusText=n+' failures imported';ensureFailure(scenario);}
- else {const o=JSON.parse(content);if(o.version!==2||!o.editor||!o.history||!Array.isArray(o.attempts))throw new Error('Invalid backup');editor={modes:{},edits:{},routeModes:{},routePins:{},...o.editor};history=o.history;attempts=o.attempts;scenario=o.scenario;loadBackcheck();statusText='Backup restored';}
+ else {const o=JSON.parse(content);if(o.version!==2||!o.editor||!o.history||!Array.isArray(o.attempts))throw new Error('Invalid backup');editor={modes:{},edits:{},routeModes:{},routePins:{},routeLock:{departure:'',destination:'',sector:''},positionGroup:'any',zfwTonnes:59,...o.editor};history=o.history;attempts=o.attempts;scenario=o.scenario;loadBackcheck();statusText='Backup restored';}
  save();renderStudy();renderSettings();}catch(err){statusText='Import error: '+err.message;renderSettings();}
 });
 function loadBackcheck(){
- editor.modes ||= {};editor.edits ||= {};editor.routeModes ||= {};editor.routePins ||= {};
+ editor.modes ||= {};editor.edits ||= {};editor.routeModes ||= {};editor.routePins ||= {};syncRouteLock();
  if(!canSelectGroup(positionGroup()))editor.positionGroup='any';
  if(!scenario||!scenario.route||!USABLE_ROUTES.some(r=>r.join('|')===scenario.route.join('|')||r[1]===scenario.route[0]&&r[0]===scenario.route[1]))scenario=construct(null);
- else {if(!matchesPositionGroup(scenario.position)||!candidates(scenario.position).length){const p=nextPosition(scenario,scenario.position);if(p!==null){concealFailure(scenario);scenario.position=p;}}ensureFailure(scenario);}
+ else {if(!matchesPositionGroup(scenario.position)||!candidates(scenario.position).length){const p=nextPosition(scenario,scenario.position);if(p!==null){concealFailure(scenario);scenario.position=p;refreshAlternates(scenario);}}ensureFailure(scenario);}
+ if(scenario.altGeoVersion!==1)refreshAlternates(scenario);
 }
 load();renderStudy();switchView('study');
 // Update only the stopwatch text, without rerendering or disturbing the study screen.
